@@ -12,12 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const users_service_1 = require("../users/users.service");
 const bcrypt = require("bcryptjs");
 let AuthService = class AuthService {
-    constructor(usersService, jwtService) {
+    constructor(usersService, jwtService, configService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
+        this.configService = configService;
     }
     async validateUser(email, password) {
         const user = await this.usersService.findByEmail(email);
@@ -27,16 +29,52 @@ let AuthService = class AuthService {
         }
         return null;
     }
-    async login(user) {
+    async generateTokens(user) {
         const payload = { email: user.email, sub: user.id };
+        const accessToken = this.jwtService.sign(payload, {
+            expiresIn: this.configService.get('JWT_ACCESS_EXPIRES_IN', '15m'),
+        });
+        const refreshToken = this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_REFRESH_SECRET', this.configService.get('JWT_SECRET')),
+            expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+        });
+        await this.usersService.updateRefreshToken(user.id, refreshToken);
         return {
-            access_token: this.jwtService.sign(payload),
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: 900,
+            token_type: 'Bearer',
+        };
+    }
+    async login(user) {
+        const tokens = await this.generateTokens(user);
+        return {
+            ...tokens,
             user: {
                 id: user.id,
                 email: user.email,
                 name: user.name,
             },
         };
+    }
+    async refreshTokens(refreshToken) {
+        try {
+            const payload = this.jwtService.verify(refreshToken, {
+                secret: this.configService.get('JWT_REFRESH_SECRET', this.configService.get('JWT_SECRET')),
+            });
+            const user = await this.usersService.findById(payload.sub);
+            if (!user || user.refreshToken !== refreshToken) {
+                throw new common_1.UnauthorizedException('Invalid refresh token');
+            }
+            return this.generateTokens(user);
+        }
+        catch (error) {
+            throw new common_1.UnauthorizedException('Invalid refresh token');
+        }
+    }
+    async logout(userId) {
+        await this.usersService.updateRefreshToken(userId, null);
+        return { message: 'Logged out successfully' };
     }
     async register(email, password, name) {
         const existingUser = await this.usersService.findByEmail(email);
@@ -56,6 +94,7 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        config_1.ConfigService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

@@ -111,7 +111,6 @@ let AdsService = class AdsService {
             const metaCampaignResponse = await this.metaService.createCampaign(userId, user.metaAdAccountId, {
                 name: campaign.name,
                 objective: campaign.objective,
-                status: 'PAUSED',
             });
             await this.campaignRepository.update(campaignId, {
                 metaCampaignId: metaCampaignResponse.id

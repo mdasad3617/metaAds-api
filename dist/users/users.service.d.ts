@@ -7,8 +7,11 @@ export declare class UsersService {
     create(data: CreateUserData): Promise<UserEntity>;
     findByEmail(email: string): Promise<UserEntity>;
     findById(id: string): Promise<UserEntity>;
+    updateRefreshToken(userId: string, refreshToken: string | null): Promise<void>;
     updateMetaIntegration(userId: string, data: {
         metaAccessToken?: string;
+        metaRefreshToken?: string;
+        metaTokenExpiresAt?: Date;
         metaUserId?: string;
         metaAdAccountId?: string;
     }): Promise<UserEntity>;

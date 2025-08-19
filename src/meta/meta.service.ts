@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import axios from 'axios';
 import { MetaAdAccount, MetaCampaignData, MetaAdSetData, MetaAdData } from 'src/common/interface/metaInterface';
+import { CreateAdDto, CreateAdSetDto, CreateCampaignDto } from './dto';
 
 @Injectable()
 export class MetaService {
@@ -46,10 +47,74 @@ export class MetaService {
         },
       });
 
-      return response.data;
+      // Exchange short-lived token for long-lived token
+      const longLivedTokenResponse = await this.exchangeForLongLivedToken(response.data.access_token);
+      
+      return {
+        access_token: longLivedTokenResponse.access_token,
+        expires_in: longLivedTokenResponse.expires_in,
+        token_type: response.data.token_type || 'bearer',
+      };
     } catch (error) {
       console.error('Error exchanging code for token:', error.response?.data || error.message);
       throw new BadRequestException('Failed to exchange authorization code for access token');
+    }
+  }
+
+  async exchangeForLongLivedToken(shortLivedToken: string) {
+    const appId = this.configService.get('META_APP_ID');
+    const appSecret = this.configService.get('META_APP_SECRET');
+
+    try {
+      const response = await axios.get(`${this.metaApiUrl}/oauth/access_token`, {
+        params: {
+          grant_type: 'fb_exchange_token',
+          client_id: appId,
+          client_secret: appSecret,
+          fb_exchange_token: shortLivedToken,
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error exchanging for long-lived token:', error.response?.data || error.message);
+      // If exchange fails, return the original token
+      return { access_token: shortLivedToken, expires_in: 3600 };
+    }
+  }
+
+  async refreshMetaToken(userId: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user?.metaAccessToken) {
+      throw new UnauthorizedException('Meta access token not found');
+    }
+
+    // Check if token is expired or will expire soon (within 1 hour)
+    const now = new Date();
+    const expiresAt = user.metaTokenExpiresAt;
+    
+    if (expiresAt && expiresAt.getTime() - now.getTime() > 3600000) {
+      // Token is still valid for more than 1 hour
+      return { access_token: user.metaAccessToken };
+    }
+
+    try {
+      // Try to refresh the token
+      const refreshedToken = await this.exchangeForLongLivedToken(user.metaAccessToken);
+      
+      // Update user with new token
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + refreshedToken.expires_in);
+      
+      await this.usersService.updateMetaIntegration(userId, {
+        metaAccessToken: refreshedToken.access_token,
+        metaTokenExpiresAt: expiresAt,
+      });
+
+      return refreshedToken;
+    } catch (error) {
+      console.error('Error refreshing Meta token:', error.response?.data || error.message);
+      throw new UnauthorizedException('Failed to refresh Meta access token. Please reconnect your account.');
     }
   }
 
@@ -89,7 +154,7 @@ export class MetaService {
     }
   }
 
-  async createCampaign(userId: string, adAccountId: string, campaignData: MetaCampaignData) {
+  async createCampaign(userId: string, adAccountId: string, campaignData: CreateCampaignDto) {
     const headers = await this.getMetaHeaders(userId);
 
     try {
@@ -112,7 +177,7 @@ export class MetaService {
     }
   }
 
-  async createAdSet(userId: string, adAccountId: string, adSetData: MetaAdSetData) {
+  async createAdSet(userId: string, adAccountId: string, adSetData: CreateAdSetDto) {
     const headers = await this.getMetaHeaders(userId);
 
     try {
@@ -156,7 +221,7 @@ export class MetaService {
     }
   }
 
-  async createAd(userId: string, adAccountId: string, adData: MetaAdData) {
+  async createAd(userId: string, adAccountId: string, adData: CreateAdDto) {
     const headers = await this.getMetaHeaders(userId);
 
     try {
@@ -202,7 +267,7 @@ export class MetaService {
     }
   }
 
-  async updateCampaignStatus(userId: string, campaignId: string, status: 'ACTIVE' | 'PAUSED') {
+  async updateCampaignStatus(userId: string, campaignId: string, status: string) {
     const headers = await this.getMetaHeaders(userId);
 
     try {

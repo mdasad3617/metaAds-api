@@ -9,6 +9,7 @@ import { AdSetEntity } from 'src/common/entities/ad-set.entity';
 import { AdEntity } from 'src/common/entities/ad.entity';
 import { AdCopyEntity } from 'src/common/entities/ad-copy.entity';
 import { AdCreativeEntity } from 'src/common/entities/ad-creative.entity';
+import { CampaignObjective } from 'src/meta/dto';
 
 @Injectable()
 export class AdsService {
@@ -126,8 +127,8 @@ export class AdsService {
         user.metaAdAccountId,
         {
           name: campaign.name,
-          objective: campaign.objective,
-          status: 'PAUSED',
+          objective: campaign.objective as unknown as CampaignObjective,
+          // status: 'PAUSED',
         }
       );
 

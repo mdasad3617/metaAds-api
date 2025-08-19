@@ -14,26 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
-const class_validator_1 = require("class-validator");
-class UpdateMetaIntegrationDto {
-}
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateMetaIntegrationDto.prototype, "metaAccessToken", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateMetaIntegrationDto.prototype, "metaUserId", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateMetaIntegrationDto.prototype, "metaAdAccountId", void 0);
+const dto_1 = require("./dto");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
@@ -48,6 +32,16 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)('profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get user profile' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'User profile retrieved successfully',
+        type: dto_1.UserResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 401,
+        description: 'Unauthorized - Invalid or missing token',
+    }),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -55,15 +49,29 @@ __decorate([
 ], UsersController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.Put)('meta-integration'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Update Meta integration settings' }),
+    (0, swagger_1.ApiBody)({ type: dto_1.UpdateMetaIntegrationDto }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Meta integration updated successfully',
+        type: dto_1.UserResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 401,
+        description: 'Unauthorized - Invalid or missing token',
+    }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, UpdateMetaIntegrationDto]),
+    __metadata("design:paramtypes", [Object, dto_1.UpdateMetaIntegrationDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateMetaIntegration", null);
 exports.UsersController = UsersController = __decorate([
+    (0, swagger_1.ApiTags)('Users'),
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('access-token'),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

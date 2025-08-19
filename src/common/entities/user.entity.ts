@@ -26,10 +26,19 @@ export class UserEntity {
   metaAccessToken?: string;
 
   @Column({ nullable: true })
+  metaRefreshToken?: string;
+
+  @Column({ nullable: true })
+  metaTokenExpiresAt?: Date;
+
+  @Column({ nullable: true })
   metaUserId?: string;
 
   @Column({ nullable: true })
   metaAdAccountId?: string;
+
+  @Column({ nullable: true })
+  refreshToken?: string;
 
   @OneToMany(() => CampaignEntity, campaign => campaign.user)
   campaigns: CampaignEntity[];

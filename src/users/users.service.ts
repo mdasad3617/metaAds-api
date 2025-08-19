@@ -37,10 +37,16 @@ export class UsersService {
     });
   }
 
+  async updateRefreshToken(userId: string, refreshToken: string | null) {
+    await this.userRepository.update(userId, { refreshToken });
+  }
+
   async updateMetaIntegration(
     userId: string,
     data: {
       metaAccessToken?: string;
+      metaRefreshToken?: string;
+      metaTokenExpiresAt?: Date;
       metaUserId?: string;
       metaAdAccountId?: string;
     },

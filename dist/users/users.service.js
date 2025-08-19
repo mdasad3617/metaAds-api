@@ -44,6 +44,9 @@ let UsersService = class UsersService {
             },
         });
     }
+    async updateRefreshToken(userId, refreshToken) {
+        await this.userRepository.update(userId, { refreshToken });
+    }
     async updateMetaIntegration(userId, data) {
         await this.userRepository.update(userId, data);
         return this.userRepository.findOne({

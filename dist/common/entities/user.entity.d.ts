@@ -9,8 +9,11 @@ export declare class UserEntity {
     createdAt: Date;
     updatedAt: Date;
     metaAccessToken?: string;
+    metaRefreshToken?: string;
+    metaTokenExpiresAt?: Date;
     metaUserId?: string;
     metaAdAccountId?: string;
+    refreshToken?: string;
     campaigns: CampaignEntity[];
     adCopies: AdCopyEntity[];
     adCreatives: AdCreativeEntity[];

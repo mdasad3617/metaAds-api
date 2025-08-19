@@ -48,11 +48,23 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
+], UserEntity.prototype, "metaRefreshToken", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Date)
+], UserEntity.prototype, "metaTokenExpiresAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
 ], UserEntity.prototype, "metaUserId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "metaAdAccountId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], UserEntity.prototype, "refreshToken", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => campaign_entity_1.CampaignEntity, campaign => campaign.user),
     __metadata("design:type", Array)

@@ -46,11 +46,60 @@ let MetaService = class MetaService {
                     code: code,
                 },
             });
-            return response.data;
+            const longLivedTokenResponse = await this.exchangeForLongLivedToken(response.data.access_token);
+            return {
+                access_token: longLivedTokenResponse.access_token,
+                expires_in: longLivedTokenResponse.expires_in,
+                token_type: response.data.token_type || 'bearer',
+            };
         }
         catch (error) {
             console.error('Error exchanging code for token:', error.response?.data || error.message);
             throw new common_1.BadRequestException('Failed to exchange authorization code for access token');
+        }
+    }
+    async exchangeForLongLivedToken(shortLivedToken) {
+        const appId = this.configService.get('META_APP_ID');
+        const appSecret = this.configService.get('META_APP_SECRET');
+        try {
+            const response = await axios_1.default.get(`${this.metaApiUrl}/oauth/access_token`, {
+                params: {
+                    grant_type: 'fb_exchange_token',
+                    client_id: appId,
+                    client_secret: appSecret,
+                    fb_exchange_token: shortLivedToken,
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('Error exchanging for long-lived token:', error.response?.data || error.message);
+            return { access_token: shortLivedToken, expires_in: 3600 };
+        }
+    }
+    async refreshMetaToken(userId) {
+        const user = await this.usersService.findById(userId);
+        if (!user?.metaAccessToken) {
+            throw new common_1.UnauthorizedException('Meta access token not found');
+        }
+        const now = new Date();
+        const expiresAt = user.metaTokenExpiresAt;
+        if (expiresAt && expiresAt.getTime() - now.getTime() > 3600000) {
+            return { access_token: user.metaAccessToken };
+        }
+        try {
+            const refreshedToken = await this.exchangeForLongLivedToken(user.metaAccessToken);
+            const expiresAt = new Date();
+            expiresAt.setSeconds(expiresAt.getSeconds() + refreshedToken.expires_in);
+            await this.usersService.updateMetaIntegration(userId, {
+                metaAccessToken: refreshedToken.access_token,
+                metaTokenExpiresAt: expiresAt,
+            });
+            return refreshedToken;
+        }
+        catch (error) {
+            console.error('Error refreshing Meta token:', error.response?.data || error.message);
+            throw new common_1.UnauthorizedException('Failed to refresh Meta access token. Please reconnect your account.');
         }
     }
     async getUserInfo(accessToken) {
