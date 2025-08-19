@@ -1,0 +1,42 @@
+import { Repository } from 'typeorm';
+import { UsersService } from '../users/users.service';
+import { MetaService } from '../meta/meta.service';
+import { CreateCampaignRequest, CreateAdSetRequest, CreateAdRequest } from 'src/common/interface/metaInterface';
+import { CampaignEntity } from 'src/common/entities/campaign.entity';
+import { AdSetEntity } from 'src/common/entities/ad-set.entity';
+import { AdEntity } from 'src/common/entities/ad.entity';
+import { AdCopyEntity } from 'src/common/entities/ad-copy.entity';
+import { AdCreativeEntity } from 'src/common/entities/ad-creative.entity';
+export declare class AdsService {
+    private campaignRepository;
+    private adSetRepository;
+    private adRepository;
+    private adCopyRepository;
+    private adCreativeRepository;
+    private usersService;
+    private metaService;
+    constructor(campaignRepository: Repository<CampaignEntity>, adSetRepository: Repository<AdSetEntity>, adRepository: Repository<AdEntity>, adCopyRepository: Repository<AdCopyEntity>, adCreativeRepository: Repository<AdCreativeEntity>, usersService: UsersService, metaService: MetaService);
+    createCampaign(userId: string, request: CreateCampaignRequest): Promise<CampaignEntity>;
+    createAdSet(userId: string, request: CreateAdSetRequest): Promise<AdSetEntity>;
+    createAd(userId: string, request: CreateAdRequest): Promise<AdEntity>;
+    getCampaigns(userId: string): Promise<CampaignEntity[]>;
+    getCampaignById(userId: string, campaignId: string): Promise<CampaignEntity>;
+    publishCampaignToMeta(userId: string, campaignId: string): Promise<{
+        metaCampaignId: any;
+        message: string;
+        id: string;
+        name: string;
+        objective: import("../common/enum/metaEnum").CampaignObjective;
+        status: import("../common/enum/metaEnum").CampaignStatus;
+        budget?: number;
+        startDate?: Date;
+        endDate?: Date;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        user: import("../common/entities/user.entity").UserEntity;
+        adSets: AdSetEntity[];
+        adCopies: AdCopyEntity[];
+    }>;
+    getMetaAdAccounts(userId: string): Promise<import("src/common/interface/metaInterface").MetaAdAccount[]>;
+}
